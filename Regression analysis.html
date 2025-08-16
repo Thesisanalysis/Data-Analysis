@@ -12,7 +12,6 @@
             margin: 0 auto;
             padding: 20px;
             color: #333;
-            background-color: #e9f0f6;
         }
         h2 {
             color: #2c3e50;
@@ -25,7 +24,6 @@
             padding: 15px;
             border-radius: 5px;
             margin-bottom: 20px;
-            border: 1px solid #ddd;
         }
         textarea {
             width: 100%;
@@ -35,37 +33,32 @@
             font-family: monospace;
             margin-bottom: 15px;
             min-height: 150px;
-            box-sizing: border-box;
         }
         .controls {
             margin-bottom: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
         }
         .primary-btn {
             background: #3498db;
             color: white;
             border: none;
-            padding: 12px 20px;
+            padding: 10px 15px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
-            transition: background 0.3s, transform 0.2s;
-            align-self: flex-start;
+            margin-right: 10px;
+            transition: background 0.3s;
         }
         .primary-btn:hover {
             background: #2980b9;
-            transform: translateY(-2px);
         }
         .hidden {
             display: none;
         }
         #variableSelection {
             background: #ecf0f1;
-            padding: 20px;
+            padding: 15px;
             border-radius: 5px;
-            border: 1px solid #ddd;
+            margin: 15px 0;
         }
         .selection-section {
             margin-bottom: 20px;
@@ -90,11 +83,9 @@
         .variable-btn.selected {
             background: #3498db;
             color: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         .options {
             display: flex;
-            flex-wrap: wrap;
             gap: 20px;
             margin-top: 15px;
             align-items: center;
@@ -104,30 +95,24 @@
             border-radius: 4px;
             border: 1px solid #ddd;
         }
-        .regression-table, .summary-table {
+        .regression-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        .regression-table th, .summary-table th {
+        .regression-table th {
             background-color: #3498db;
             color: white;
-            padding: 12px;
+            padding: 10px;
             text-align: center;
         }
-        .summary-table th {
-            background-color: #2ecc71;
-        }
-        .regression-table td, .summary-table td {
-            padding: 10px;
+        .regression-table td {
+            padding: 8px;
             border: 1px solid #ddd;
             text-align: center;
         }
         .regression-table tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-        .summary-table tr:nth-child(even) {
             background-color: #f2f2f2;
         }
         .sig {
@@ -139,6 +124,20 @@
             padding: 15px;
             background: #f8f9fa;
             border-radius: 5px;
+        }
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .summary-table th {
+            background-color: #2ecc71;
+            color: white;
+            padding: 8px;
+            text-align: left;
+        }
+        .summary-table td {
+            padding: 8px;
             border: 1px solid #ddd;
         }
         .diagnostics {
@@ -146,7 +145,6 @@
             padding: 15px;
             background: #f8f9fa;
             border-radius: 5px;
-            border: 1px solid #ddd;
         }
         .residual-plot {
             width: 100%;
@@ -159,7 +157,6 @@
         .plot-label {
             position: absolute;
             font-size: 12px;
-            color: #555;
         }
         .plot-label.x {
             bottom: 5px;
@@ -178,7 +175,6 @@
             height: 6px;
             border-radius: 50%;
             background: #3498db;
-            transition: all 0.1s;
         }
         .sig-note {
             font-size: 0.9em;
@@ -212,31 +208,31 @@
         </ol>
         <p><strong>Data Format Example:</strong></p>
         <pre>
-Overall abuse	SI TOTAL
-42	112
-32	100
-25	114</pre>
+Overall abuse   SI TOTAL
+42  112
+32  100
+25  114</pre>
     </div>
 
     <textarea id="tDataInput" rows="10" placeholder="Paste your data here (tab or comma separated)"></textarea>
 
     <div class="controls">
         <button id="loadDataBtn" class="primary-btn">Load Data</button>
-
+        
         <div id="variableSelection" class="hidden">
             <div class="selection-section">
                 <h3>Select Dependent Variable</h3>
                 <div id="dependentOptions" class="variable-options"></div>
             </div>
-
+            
             <div class="selection-section">
                 <h3>Select Independent Variables</h3>
                 <div id="independentOptions" class="variable-options"></div>
             </div>
-
+            
             <button id="confirmSelectionBtn" class="primary-btn">Confirm Selection</button>
         </div>
-
+        
         <div id="analysisControls" class="hidden">
             <button id="analyzeBtn" class="primary-btn">Run Analysis</button>
             <div class="options">
@@ -257,6 +253,7 @@ Overall abuse	SI TOTAL
     <div id="resultsContainer"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.7.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jstat@1.9.5/dist/jstat.min.js"></script>
 
     <script>
         // Global variables
@@ -274,36 +271,31 @@ Overall abuse	SI TOTAL
                     }
                     return row.split(',').map(cell => cell.trim());
                 });
-
+            
             if (rows.length < 2) {
                 alert("Error: Need at least 2 rows (header + data)");
                 return null;
             }
 
             headers = rows[0];
-            const dataRows = rows.slice(1).filter(row => row.length === headers.length && row.some(cell => cell.trim() !== ''));
+            const dataRows = rows.slice(1).filter(row => row.length === headers.length);
 
             if (dataRows.length === 0) {
                 alert("Error: No valid data rows found");
                 return null;
             }
-            
-            // Filter out any columns that are not mostly numeric
-            const numericColumns = identifyNumericColumns(dataRows);
-            const filteredHeaders = numericColumns.map(colIndex => headers[colIndex]);
-            const filteredDataRows = dataRows.map(row => numericColumns.map(colIndex => row[colIndex]));
 
             return {
-                headers: filteredHeaders,
-                rows: filteredDataRows
+                headers: headers,
+                rows: dataRows,
+                numericColumns: identifyNumericColumns(dataRows)
             };
         }
 
         function identifyNumericColumns(dataRows) {
             const numericCols = [];
-            const numColumns = dataRows[0].length;
-
-            for (let col = 0; col < numColumns; col++) {
+            
+            for (let col = 0; col < headers.length; col++) {
                 let numericCount = 0;
                 for (const row of dataRows) {
                     if (!isNaN(parseFloat(row[col])) && row[col].trim() !== '') {
@@ -314,24 +306,27 @@ Overall abuse	SI TOTAL
                     numericCols.push(col);
                 }
             }
+            
             return numericCols;
         }
 
         function showVariableSelector() {
             const depContainer = document.getElementById('dependentOptions');
             const indepContainer = document.getElementById('independentOptions');
+            
             depContainer.innerHTML = '';
             indepContainer.innerHTML = '';
             
-            headers.forEach((header, index) => {
+            dataset.numericColumns.forEach(colIndex => {
+                const header = headers[colIndex];
+                
                 const depBtn = document.createElement('button');
                 depBtn.className = 'variable-btn';
                 depBtn.textContent = header;
                 depBtn.onclick = () => {
                     document.querySelectorAll('#dependentOptions .variable-btn').forEach(b => b.classList.remove('selected'));
                     depBtn.classList.add('selected');
-                    selectedDependent = index;
-                    updateIndependentOptions();
+                    selectedDependent = colIndex;
                 };
                 depContainer.appendChild(depBtn);
                 
@@ -346,22 +341,6 @@ Overall abuse	SI TOTAL
             });
             
             document.getElementById('variableSelection').classList.remove('hidden');
-        }
-
-        function updateIndependentOptions() {
-            document.querySelectorAll('#independentOptions .variable-btn').forEach(btn => {
-                const header = btn.textContent;
-                const colIndex = headers.indexOf(header);
-                if (colIndex === selectedDependent) {
-                    btn.classList.remove('selected');
-                    btn.disabled = true;
-                    btn.style.opacity = 0.5;
-                } else {
-                    btn.disabled = false;
-                    btn.style.opacity = 1;
-                }
-            });
-            updateSelectedIndependents();
         }
 
         function updateSelectedIndependents() {
@@ -386,88 +365,89 @@ Overall abuse	SI TOTAL
             
             const X = [];
             const y = [];
+            const validRows = [];
             
             dataset.rows.forEach(row => {
-                const yVal = parseFloat(row[selectedDependent]);
-                const xRow = selectedIndependents.map(col => parseFloat(row[col]));
+                let isValid = true;
+                const xRow = [];
                 
-                if (!isNaN(yVal) && xRow.every(val => !isNaN(val))) {
+                const yVal = parseFloat(row[selectedDependent]);
+                if (isNaN(yVal)) isValid = false;
+                
+                selectedIndependents.forEach(col => {
+                    const xVal = parseFloat(row[col]);
+                    if (isNaN(xVal)) isValid = false;
+                    xRow.push(xVal);
+                });
+                
+                if (isValid) {
                     if (includeIntercept) xRow.unshift(1);
                     X.push(xRow);
                     y.push(yVal);
+                    validRows.push(row);
                 }
             });
             
-            if (X.length < selectedIndependents.length + (includeIntercept ? 1 : 0) + 1) {
-                alert("Error: Not enough valid cases for the number of predictors. Make sure you have more observations than variables.");
+            if (X.length < selectedIndependents.length + (includeIntercept ? 1 : 0)) {
+                alert("Error: Not enough valid cases for the number of predictors");
                 return;
             }
             
             try {
                 const result = performRegression(X, y);
-                displayResults(result, alpha, includeIntercept);
+                displayResults(result, alpha, includeIntercept, validRows);
             } catch (error) {
                 console.error("Regression error:", error);
-                alert("An error occurred during analysis. Please check your data for issues like constant values or perfect multicollinearity.");
+                alert("An error occurred during analysis. This is often caused by a mathematical issue with the data, such as constant values or perfectly correlated variables. Please check your data or try selecting different variables.");
             }
         }
 
         function performRegression(X, y) {
             const X_mat = math.matrix(X);
             const y_mat = math.matrix(y);
-            const n = y.length;
-            const p = X[0].length - 1; // Number of predictors, excluding intercept
 
-            let XtX_inv;
-            let b;
-
-            try {
-                const Xt = math.transpose(X_mat);
-                const XtX = math.multiply(Xt, X_mat);
-                const Xty = math.multiply(Xt, y_mat);
-                
-                XtX_inv = math.inv(XtX);
-                b = math.multiply(XtX_inv, Xty);
-                
-            } catch (e) {
-                // Fallback to ridge regression on inversion failure
-                const lambda = 0.1;
-                const Xt = math.transpose(X_mat);
-                const XtX = math.multiply(Xt, X_mat);
-                const regularized = math.add(XtX, math.multiply(lambda, math.identity(XtX.size()[0])));
-                const Xty = math.multiply(Xt, y_mat);
-                
-                XtX_inv = math.inv(regularized);
-                b = math.multiply(XtX_inv, Xty);
-                console.warn("Used ridge regression due to multicollinearity or singular matrix.");
+            const Xt = math.transpose(X_mat);
+            const XtX = math.multiply(Xt, X_mat);
+            
+            // Check for singularity before attempting inversion
+            if (math.det(XtX) === 0) {
+                throw new Error("Singular matrix: data contains constant values or perfect multicollinearity.");
             }
+            
+            const XtX_inv = math.inv(XtX);
+            const Xty = math.multiply(Xt, y_mat);
+            const b = math.multiply(XtX_inv, Xty);
 
             const y_pred = math.multiply(X_mat, b);
             const residuals = math.subtract(y_mat, y_pred);
-            
+            const n = X.length;
+            const p = X[0].length - (X[0][0] === 1 ? 1 : 0);
             const y_mean = math.mean(y_mat);
             const SSres = math.sum(math.square(residuals));
             const SStot = math.sum(math.map(y_mat, val => Math.pow(val - y_mean, 2)));
             const SSreg = SStot - SSres;
-            
+
             const Rsq = 1 - (SSres / SStot);
-            const adjRsq = 1 - (SSres / (n - p - 1)) / (SStot / (n - 1));
-            
+            const adjRsq = 1 - ((SSres / (n - p - 1)) / (SStot / (n - 1)));
+
             const MSE = SSres / (n - p - 1);
             const covMatrix = math.multiply(MSE, XtX_inv);
             const SE = math.sqrt(math.diag(covMatrix));
-            
+
             const tStats = math.dotDivide(b, SE);
-            const pValues = math.map(tStats, t => 2 * (1 - tCDF(Math.abs(t), n - p - 1)));
             
+            const pValues = tStats.map(t => {
+                return 2 * (1 - jStat.studentt.cdf(Math.abs(t), n - p - 1));
+            });
+
             const F = (SSreg / p) / (SSres / (n - p - 1));
-            const F_pValue = 1 - fCDF(F, p, n - p - 1);
-            
+            const F_pValue = 1 - jStat.centralF.cdf(F, p, n - p - 1);
+
             return {
                 coefficients: b.valueOf(),
                 standardErrors: SE.valueOf(),
                 tStats: tStats.valueOf(),
-                pValues: pValues.valueOf(),
+                pValues: pValues,
                 Rsq: Rsq,
                 adjRsq: adjRsq,
                 SSres: SSres,
@@ -480,18 +460,18 @@ Overall abuse	SI TOTAL
                 F: F,
                 F_pValue: F_pValue,
                 X: X,
-                y: y
+                y: y_mat.valueOf()
             };
         }
 
-        function displayResults(result, alpha, includeIntercept) {
+        function displayResults(result, alpha, includeIntercept, validRows) {
             const depVarName = headers[selectedDependent];
             let indepVarNames = selectedIndependents.map(i => headers[i]);
             
             let html = `<h3>Regression Results</h3>`;
             html += `<p>Dependent variable: <strong>${depVarName}</strong></p>`;
             html += `<p>Independent variables: <strong>${indepVarNames.join(', ')}</strong></p>`;
-            html += `<p>Number of cases: <strong>${result.y.length}</strong></p>`;
+            html += `<p>Number of cases: <strong>${validRows.length}</strong></p>`;
             
             html += `<div class="model-summary">
                         <h4>Model Summary</h4>
@@ -503,6 +483,10 @@ Overall abuse	SI TOTAL
                             <tr>
                                 <th>Adjusted R-squared</th>
                                 <td>${result.adjRsq.toFixed(4)}</td>
+                            </tr>
+                            <tr>
+                                <th>Residual Standard Error</th>
+                                <td>${Math.sqrt(result.SSres / result.dfRes).toFixed(4)}</td>
                             </tr>
                             <tr>
                                 <th>F-statistic</th>
@@ -536,8 +520,8 @@ Overall abuse	SI TOTAL
                             <td>${result.coefficients[i][0].toFixed(4)}</td>
                             <td>${result.standardErrors[i][0].toFixed(4)}</td>
                             <td>${result.tStats[i][0].toFixed(4)}</td>
-                            <td class="${result.pValues[i][0] < alpha ? 'sig' : ''}">
-                                ${result.pValues[i][0].toExponential(3)}
+                            <td class="${result.pValues[i] < alpha ? 'sig' : ''}">
+                                ${result.pValues[i].toExponential(3)}
                             </td>
                         </tr>`;
             }
@@ -559,7 +543,12 @@ Overall abuse	SI TOTAL
 
         function drawResidualPlot(predicted, residuals) {
             const plot = document.getElementById('residualPlot');
-            plot.innerHTML = `<div class="plot-label x">Predicted Values</div><div class="plot-label y">Residuals</div>`;
+            plot.innerHTML = '';
+            
+            plot.innerHTML = `
+                <div class="plot-label x">Predicted Values</div>
+                <div class="plot-label y">Residuals</div>
+            `;
             
             const width = plot.offsetWidth - 40;
             const height = plot.offsetHeight - 40;
@@ -575,9 +564,9 @@ Overall abuse	SI TOTAL
             
             const zeroLine = document.createElement('div');
             zeroLine.style.position = 'absolute';
-            zeroLine.style.left = '20px';
-            zeroLine.style.right = '20px';
-            zeroLine.style.top = (yScale(0) - 1) + 'px';
+            zeroLine.style.left = '0';
+            zeroLine.style.right = '0';
+            zeroLine.style.top = yScale(0) + 'px';
             zeroLine.style.height = '1px';
             zeroLine.style.backgroundColor = '#999';
             plot.appendChild(zeroLine);
@@ -587,27 +576,8 @@ Overall abuse	SI TOTAL
                 dot.className = 'residual-dot';
                 dot.style.left = (xScale(predicted[i][0]) - 3) + 'px';
                 dot.style.top = (yScale(residuals[i][0]) - 3) + 'px';
-                dot.title = `Predicted: ${predicted[i][0].toFixed(2)}, Residual: ${residuals[i][0].toFixed(2)}`;
                 plot.appendChild(dot);
             }
-        }
-
-        // F and t-CDF functions (Simplified implementations, may have minor inaccuracies)
-        function tCDF(t, df) {
-            if (df <= 0) return 0.5;
-            const p = 0.5;
-            const nu = df;
-            const a = math.beta(0.5, nu / 2);
-            const s = (1 + (t * t / nu));
-            const x = (1 / s);
-            const betainc = math.betainc(x, nu / 2, 0.5);
-            return 1 - (0.5 * betainc);
-        }
-
-        function fCDF(F, df1, df2) {
-            if (F <= 0 || df1 <= 0 || df2 <= 0) return 0;
-            const x = (df1 * F) / (df1 * F + df2);
-            return math.betainc(x, df1 / 2, df2 / 2);
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -622,10 +592,8 @@ Overall abuse	SI TOTAL
                 if (!parsedData) return;
                 
                 dataset = parsedData;
-                headers = dataset.headers;
                 showVariableSelector();
                 document.getElementById('analysisControls').classList.remove('hidden');
-                document.getElementById('resultsContainer').innerHTML = '';
             });
 
             document.getElementById('confirmSelectionBtn').addEventListener('click', function() {
